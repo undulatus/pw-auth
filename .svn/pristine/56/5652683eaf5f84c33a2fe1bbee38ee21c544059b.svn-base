@@ -1,0 +1,9 @@
+package com.pointwest.authentication.service;
+
+import com.pointwest.authentication.domain.Employee;
+
+
+public interface EmployeeService {
+	
+	public Employee fetchEmployee(String username) ;
+}

@@ -1,0 +1,117 @@
+package com.pointwest.authentication.controller;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson.JacksonFactory;
+import com.pointwest.authentication.domain.Employee;
+import com.pointwest.authentication.response.Error;
+import com.pointwest.authentication.response.ErrorCode;
+import com.pointwest.authentication.response.PointwestAuthToken;
+import com.pointwest.authentication.service.EmployeeService;
+import com.pointwest.authentication.service.GoogleVerifierService;
+import com.pointwest.authentication.service.impl.JWTCreator;
+import com.pointwest.authentication.service.impl.JWTDecode;
+import com.pointwest.authentication.service.impl.JWTVerify;
+
+@RestController
+public class AuthenticationController {
+
+	@Value("${client_id}")
+	private String applicationClientId = "";
+
+	@Autowired
+	JWTCreator jwtCreate;
+	@Autowired
+	JWTVerify jwtVerify;
+	@Autowired
+	JWTDecode jwtDecode;
+	@Autowired
+	EmployeeService employeeService;
+	@Autowired
+	GoogleVerifierService googleVerifierService;
+
+	private GoogleIdTokenVerifier googleTokenVerifier;
+
+	@PostConstruct
+	public void init() {
+		// TODO: log
+		System.out.println("Setting proxy settings: ");
+		System.setProperty("http.proxyHost", "cache.srv.pointwest.com.ph");
+		System.setProperty("http.proxyPort", "3128");
+		System.setProperty("https.proxyHost", "cache.srv.pointwest.com.ph");
+		System.setProperty("https.proxyPort", "3128");
+		
+		System.out.println("Initializing Google Token Verifier with client: " + applicationClientId);
+		googleTokenVerifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new JacksonFactory())
+				.setAudience(Collections.singletonList(applicationClientId)).build();
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = "/google/authenticate")
+	public ResponseEntity<Object> createToken(@RequestParam("googleToken") String googleToken) {
+		GoogleIdToken idToken = null;
+		try {
+			idToken = googleTokenVerifier.verify(googleToken);
+		} catch (GeneralSecurityException | IOException e) {
+			return new ResponseEntity<>(new Error(ErrorCode.SERVER_ERROR, e.getMessage()),
+					HttpStatus.INTERNAL_SERVER_ERROR); // TODO
+		}
+
+		if (idToken == null) {
+			// TODO: log
+			System.out.println("Invalid Google token: " + googleToken);
+
+			return new ResponseEntity<>(new Error(ErrorCode.INVALID_TOKEN, "Invalid Token"), HttpStatus.BAD_REQUEST);
+		}
+		
+		String username = idToken.getPayload().getEmail();
+		int index = username.indexOf('@');
+		username =username.substring(0,index);
+		
+		Employee employee = employeeService.fetchEmployee(username);
+
+		if (employee != null) {
+
+			// create JWT
+			try {
+				String token = jwtCreate.create(employee);
+
+				return new ResponseEntity<>(new PointwestAuthToken(token), HttpStatus.OK);
+			} catch (JWTCreationException exception) {
+				return new ResponseEntity<>(new Error(ErrorCode.SERVER_ERROR, exception.getMessage()),
+						HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+		} else {
+			return new ResponseEntity<>(new Error(ErrorCode.USER_NOT_ALLOWED, "User not allowed to access application"),
+					HttpStatus.FORBIDDEN);
+		}
+
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = "/decode")
+	public void decodeToken(@RequestParam("token") String token) {
+		jwtDecode.decode(token);
+	}
+
+	@RequestMapping(method = RequestMethod.POST, value = "/verify")
+	public void verifyToken(@RequestParam("token") String token) {
+		jwtVerify.verify(token);
+	}
+
+}

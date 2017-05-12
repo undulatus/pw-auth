@@ -1,0 +1,7 @@
+#database properties
+spring.datasource.url=jdbc:mysql://localhost:3306/pw_auth?autoReconnect=true&useSSL=false
+spring.datasource.username=root
+spring.datasource.password=password
+spring.jpa.generate-ddl=true
+
+#server.port=8081

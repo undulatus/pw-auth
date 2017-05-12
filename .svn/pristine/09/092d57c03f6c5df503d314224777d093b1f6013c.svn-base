@@ -1,0 +1,28 @@
+package com.pointwest.authentication.service.impl;
+
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.exceptions.JWTDecodeException;
+import com.auth0.jwt.interfaces.Claim;
+import com.auth0.jwt.interfaces.DecodedJWT;
+
+@Service
+public class JWTDecode {
+	public String decode(String token){
+		try {
+		    DecodedJWT jwt = JWT.decode(token);
+		    Map<String, Claim> claims = jwt.getClaims();
+		    
+		    for (Claim name : claims.values()) {
+	            System.out.println(name.asString());
+	        }
+		    
+		} catch (JWTDecodeException exception){
+		    exception.printStackTrace();
+		}
+		return null;
+	}
+}

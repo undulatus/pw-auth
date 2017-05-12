@@ -1,0 +1,22 @@
+package com.pointwest.authentication.service.impl;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.pointwest.authentication.data.EmployeeRepository;
+import com.pointwest.authentication.domain.Employee;
+import com.pointwest.authentication.service.EmployeeService;
+
+@Service
+public class EmployeeServiceImpl implements EmployeeService{
+	
+	@Autowired
+	EmployeeRepository employeeRepository;
+	
+	@Override
+	public Employee fetchEmployee(String username) {
+		System.out.println("fetch");
+		Employee employee = employeeRepository.findByUsername(username);
+		return employee;
+	}
+}

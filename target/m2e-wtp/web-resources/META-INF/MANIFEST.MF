@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Implementation-Title: PWAuthentication
+Implementation-Version: 0.1.0-SNAPSHOT
+Built-By: bryan.batanes
+Implementation-Vendor-Id: com.pointwest.authentication
+Build-Jdk: 1.8.0_71
+Implementation-URL: http://projects.spring.io/spring-boot/PW-authentic
+ ation/
+Created-By: Maven Integration for Eclipse
+Implementation-Vendor: Pivotal Software, Inc.
+

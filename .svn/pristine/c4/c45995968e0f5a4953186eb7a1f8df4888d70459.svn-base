@@ -1,0 +1,76 @@
+package com.pointwest.authentication.service.impl;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.GeneralSecurityException;
+import java.util.Collections;
+import java.util.Properties;
+
+import javax.annotation.PostConstruct;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
+import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
+import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.json.jackson.JacksonFactory;
+import com.pointwest.authentication.controller.AuthenticationController;
+import com.pointwest.authentication.service.GoogleVerifierService;
+
+@Service
+public class GoogleVerifierServiceImpl implements GoogleVerifierService{
+
+	@Value("${client_id}")
+	private String appClientId = "";
+	
+	private GoogleIdTokenVerifier verifier;
+    
+    @PostConstruct
+    public void init() {
+    	// TODO: log
+    	System.out.println("Initializing Google Token Verifier with client: "+appClientId);
+    	verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new JacksonFactory())
+			.setAudience(Collections.singletonList(appClientId))
+			.build();
+    }
+	
+	@Override
+	public boolean verify(String idTokenString) throws GeneralSecurityException, IOException {
+//		appClientId = getClientId();
+		
+//		GoogleIdTokenVerifier verifier = new GoogleIdTokenVerifier.Builder(new NetHttpTransport(), new JacksonFactory())
+//		.setAudience(Collections.singletonList(appClientId))
+//		 // Or, if multiple clients access the backend:
+//		 //.setAudience(Arrays.asList(CLIENT_ID_1, CLIENT_ID_2, CLIENT_ID_3))
+//		.build();
+		
+		// (Receive idTokenString by HTTPS POST)
+		// TODO: check if Google API validates expiration
+		GoogleIdToken idToken = verifier.verify(idTokenString);
+
+		return idToken != null;
+	}
+
+	@Override
+	public String getSubject(String idTokenString) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	@Override
+	public String getClientId() {
+		Properties prop = new Properties();
+		try (InputStream input = AuthenticationController.class.getClassLoader().getResourceAsStream("google.signin.properties"))
+		{
+			prop.load(input);
+			return prop.getProperty("client_id");
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return null;
+		
+	}
+
+}

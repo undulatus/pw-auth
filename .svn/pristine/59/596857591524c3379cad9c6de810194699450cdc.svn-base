@@ -1,0 +1,13 @@
+package com.pointwest.authentication.service;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+
+public interface GoogleVerifierService {
+	public String getClientId();
+	
+	public boolean verify(String idTokenString) throws GeneralSecurityException, IOException;
+	
+	public String getSubject(String idTokenString);
+	
+}

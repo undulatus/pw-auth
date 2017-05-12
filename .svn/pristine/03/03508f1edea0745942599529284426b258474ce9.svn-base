@@ -1,0 +1,42 @@
+package com.pointwest.authentication.service.impl;
+
+import java.io.UnsupportedEncodingException;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.exceptions.JWTCreationException;
+import com.pointwest.authentication.domain.Employee;
+import com.pointwest.authentication.service.EmployeeService;
+
+@Service
+public class JWTCreator {
+	
+	@Autowired
+	EmployeeService employeeService;
+	
+	private String token = "";
+	
+	public String create(Employee employee){
+		try {
+		    Algorithm algorithm = Algorithm.HMAC256("secret");
+		    token = JWT.create()
+		        .withIssuer("auth0")
+		        .withClaim("usr", employee.getUsername())
+		        .withClaim("rle", employee.getRole())
+		        // TODO: add domain
+		        .sign(algorithm);
+		    
+		} catch (UnsupportedEncodingException exception){
+		    //UTF-8 encoding not supported
+		} catch (JWTCreationException exception){
+		    //Invalid Signing configuration / Couldn't convert Claims.
+		}
+		
+		System.out.println(token);
+		return token;
+	}
+	
+}
